@@ -397,13 +397,18 @@ in
     programs.kdeconnect.package = kdePackages.kdeconnect-kde;
     programs.partition-manager.package = kdePackages.partitionmanager;
 
-    # FIXME: ugly hack. See #292632 for details.
+    # See #292632 for details.
+    # The activation script deletes stale sycoca caches. The systemd user
+    # service then rebuilds with the correct XDG_DATA_DIRS at login.
     system.userActivationScripts.rebuildSycoca = activationScript;
     systemd.user.services.nixos-rebuild-sycoca = {
       description = "Rebuild KDE system configuration cache";
       wantedBy = [ "graphical-session-pre.target" ];
       serviceConfig.Type = "oneshot";
-      script = activationScript;
+      script = ''
+        ${activationScript}
+        ${kdePackages.kservice}/bin/kbuildsycoca6 --noincremental || true
+      '';
     };
   };
 }
